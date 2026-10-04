@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeReuse Advisor</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#f6f7fb;color:#182033}
+.app{display:flex;min-height:100vh}
+.sidebar{width:245px;background:#111827;color:#dbe2ef;padding:22px 16px;display:flex;flex-direction:column}
+.brand{font-size:20px;font-weight:700;color:white;margin:0 8px 28px}
+.brand span{color:#7dd3fc}
+.nav a{display:block;padding:11px 12px;margin:4px 0;border-radius:8px;color:#aeb8ca;text-decoration:none;font-size:14px}
+.nav a.active,.nav a:hover{background:#1f2937;color:white}
+.side-bottom{margin-top:auto;border-top:1px solid #293244;padding:16px 8px;font-size:12px;color:#8d99ad}
+.main{flex:1;padding:28px 34px;overflow:auto}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+h1{font-size:26px;margin:0 0 5px}
+.sub{color:#6b7280;font-size:13px}
+.user{background:white;border:1px solid #e5e7eb;padding:8px 12px;border-radius:20px;font-size:13px}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}
+.card{background:white;border:1px solid #e5e7eb;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(15,23,42,.03)}
+.card h2{font-size:16px;margin:0 0 15px}
+label{font-size:12px;font-weight:600;color:#4b5563;display:block;margin-bottom:7px}
+textarea,select{width:100%;border:1px solid #d8dee8;border-radius:8px;padding:12px;font:inherit;font-size:13px;outline:none;background:white}
+textarea{min-height:125px;resize:vertical}
+textarea:focus,select:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.12)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:13px}
+button{border:0;border-radius:8px;padding:11px 16px;font-weight:600;cursor:pointer}
+.primary{background:#2563eb;color:white;width:100%;margin-top:15px}
+.primary:hover{background:#1d4ed8;opacity: 0.9}
+.primary:disabled{background:#94a3b8;cursor:not-allowed}
+.status{display:flex;align-items:center;gap:8px;font-size:12px;color:#64748b}
+.dot{width:8px;height:8px;background:#22c55e;border-radius:50%}
+.metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.metric{background:#f8fafc;border:1px solid #e7ebf1;border-radius:9px;padding:13px}
+.metric .num{font-size:20px;font-weight:700}.metric .lbl{font-size:11px;color:#6b7280;margin-top:3px}
+.recommend{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:10px;padding:16px}
+.badge{display:inline-block;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;padding:5px 9px;border-radius:999px}
+.recommend h3{margin:9px 0 5px;font-size:19px}
+.recommend p{font-size:12px;color:#4b5563;line-height:1.5;margin:0}
+.score{font-size:28px;font-weight:750}
+.candidate{border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-top:10px}
+.candidate-top{display:flex;justify-content:space-between;align-items:start}
+.candidate h3{font-size:14px;margin:0 0 4px}
+.path{font-family:Consolas,monospace;font-size:11px;color:#64748b}
+.pill{font-size:10px;padding:4px 7px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-weight:600}
+.progress{height:6px;background:#e5e7eb;border-radius:5px;margin:10px 0}
+.progress i{display:block;height:100%;background:#3b82f6;border-radius:5px}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:10px;background:#f3f4f6;color:#4b5563;padding:4px 7px;border-radius:5px}
+.factors{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.factor{border:1px solid #edf0f4;border-radius:8px;padding:11px}
+.factor .top{display:flex;justify-content:space-between;font-size:11px;margin-bottom:7px}
+.bar{height:5px;background:#e5e7eb;border-radius:4px}.bar span{display:block;height:100%;background:#64748b;border-radius:4px}
+.activity{margin-top:20px}
+.timeline{display:flex;gap:14px;align-items:center;padding:10px 0;color:#64748b;font-size:11px}
+.step{display:flex;align-items:center;gap:6px}.circle{width:22px;height:22px;border-radius:50%;background:#e5e7eb;text-align:center;padding-top:4px;color:#64748b;font-weight:700}.done .circle{background:#dbeafe;color:#2563eb}
+.table{width:100%;border-collapse:collapse;font-size:12px}.table th,.table td{text-align:left;padding:11px;border-bottom:1px solid #edf0f4}.table th{color:#6b7280;font-size:10px;text-transform:uppercase}
+.empty{color:#9ca3af;font-size:12px}
+@media(max-width:900px){.sidebar{display:none}.main{padding:20px}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">Code<span>Reuse</span> Advisor</div>
+  <nav class="nav">
+    <a class="active" href="#">⌂ &nbsp; Advisor</a>
+    <a href="#">◫ &nbsp; Repositories</a>
+    <a href="#">⌕ &nbsp; Code Search</a>
+    <a href="#">◈ &nbsp; Analysis History</a>
+    <a href="#">⚙ &nbsp; Settings</a>
+  </nav>
+  <div class="side-bottom">Enterprise Engineering Intelligence<br><br>v0.1 • AI Powered</div>
+</aside>
+
+<main class="main">
+  <div class="header">
+    <div><h1>Reuse Feasibility Advisor</h1><div class="sub">Find reusable enterprise components before building from scratch.</div></div>
+    <div class="user">👤 Engineering Team</div>
+  </div>
+
+  <div class="grid">
+    <section>
+      <div class="card">
+        <h2>New Development Requirement</h2>
+        <label>Describe what you need</label>
+        <textarea id="requirement">We need a customer identity validation service that validates PAN and GST numbers, exposes REST APIs, and returns structured validation errors.</textarea>
+        <div class="row">
+          <div><label>Repository Scope</label>
+            <select id="repo"><option>All repositories</option><option>customer-platform</option><option>shared-services</option><option>payments-platform</option></select>
+          </div>
+          <div><label>Target Technology</label>
+            <select id="tech"><option>Python / FastAPI</option><option>Java / Spring Boot</option><option>.NET / C#</option><option>Node.js / TypeScript</option></select>
+          </div>
+        </div>
+        <button id="analyzeBtn" class="primary" onclick="analyze()">Analyze Reuse Feasibility →</button>
+      </div>
+
+      <div class="card activity">
+        <h2>Analysis Pipeline</h2>
+        <div class="timeline" id="timeline">
+          <div class="step"><span class="circle">1</span> Requirement</div>
+          <span>→</span><div class="step"><span class="circle">2</span> Search</div>
+          <span>→</span><div class="step"><span class="circle">3</span> Rank</div>
+          <span>→</span><div class="step"><span class="circle">4</span> Feasibility</div>
+          <span>→</span><div class="step"><span class="circle">5</span> Report</div>
+        </div>
+        <div class="status"><span class="dot" id="statusDot" style="background:#e5e7eb"></span><span id="status">Ready to analyze codebase.</span></div>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <h2>Top Reusable Components</h2>
+        <div id="candidates"><div class="empty">Click Analyze to find components.</div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="card">
+        <div class="metric-row">
+          <div class="metric"><div class="num" id="m_reuse">-</div><div class="lbl">Reuse Confidence</div></div>
+          <div class="metric"><div class="num" id="m_cands">-</div><div class="lbl">Candidates</div></div>
+          <div class="metric"><div class="num" id="m_effort">-</div><div class="lbl">Effort Saving</div></div>
+        </div>
+        <div class="recommend" id="recommendBox" style="display:none">
+          <span class="badge" id="recBadge"></span>
+          <h3 id="recTitle"></h3>
+          <p id="recDesc"></p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <h2>Feasibility Analysis</h2>
+        <div class="factors" id="factors">
+           <div class="empty">No analysis data yet.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <h2>Dependency & Risk Summary</h2>
+        <table class="table" id="risks">
+          <tr><th>Area</th><th>Finding</th><th>Risk</th></tr>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+</div>
+
+<script>
+async function analyze(){
+  const btn = document.getElementById("analyzeBtn");
+  const s = document.getElementById("status");
+  const dot = document.getElementById("statusDot");
+  const req = document.getElementById("requirement").value;
+  const repo = document.getElementById("repo").value;
+  const tech = document.getElementById("tech").value;
+  
+  if(!req) return;
+  
+  btn.disabled = true;
+  btn.textContent = "Analyzing...";
+  s.textContent = "Analyzing requirement, searching code, ranking candidates...";
+  dot.style.background = "#eab308";
+  
+  // Pipeline animation
+  const steps = document.querySelectorAll('.step');
+  steps.forEach(s => s.classList.remove('done'));
+  let i = 0;
+  const iv = setInterval(() => {
+    if(i < steps.length) {
+      steps[i].classList.add('done');
+      steps[i].querySelector('.circle').textContent = '✓';
+      i++;
+    }
+  }, 1000);
+
+  const start = Date.now();
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: req, repo: repo, tech: tech })
+    });
+    
+    if(!res.ok) throw new Error("API failed");
+    const data = await res.json();
+    
+    clearInterval(iv);
+    steps.forEach(s => { s.classList.add('done'); s.querySelector('.circle').textContent = '✓'; });
+    
+    const sec = ((Date.now() - start)/1000).toFixed(1);
+    s.textContent = `Analysis completed in ${sec}s`;
+    dot.style.background = "#22c55e";
+    
+    render(data);
+  } catch(e) {
+    clearInterval(iv);
+    s.textContent = "Error: " + e.message;
+    dot.style.background = "#ef4444";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Analyze Reuse Feasibility →";
+  }
+}
+
+function render(data){
+  if(data.error) {
+     alert(data.error); return;
+  }
+  // Render Candidates
+  document.getElementById("candidates").innerHTML = (data.candidates || []).map(x=>`
+  <div class="candidate">
+    <div class="candidate-top"><div><h3>${x.name}</h3><div class="path">${x.path}</div></div><span class="pill">${x.type}</span></div>
+    <div class="progress"><i style="width:${x.score}%"></i></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+     <div class="tags">${(x.tags||[]).map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+     <b style="font-size:12px">${x.score}% match</b>
+    </div>
+  </div>`).join("");
+
+  // Render Metrics
+  if(data.metrics) {
+    document.getElementById("m_reuse").textContent = data.metrics.reuse_confidence || "0%";
+    document.getElementById("m_cands").textContent = data.metrics.candidates_count || "0";
+    document.getElementById("m_effort").textContent = data.metrics.effort_saving || "0%";
+  }
+
+  // Render Recommendation
+  if(data.recommendation) {
+    document.getElementById("recommendBox").style.display = "block";
+    document.getElementById("recBadge").textContent = data.recommendation.badge;
+    document.getElementById("recTitle").textContent = data.recommendation.title;
+    document.getElementById("recDesc").textContent = data.recommendation.description;
+  }
+
+  // Render Factors
+  if(data.factors) {
+    const fMap = {
+       "Functional Match": data.factors.functional_match,
+       "Tech Compatibility": data.factors.tech_compatibility,
+       "Dependencies": data.factors.dependencies,
+       "Maintainability": data.factors.maintainability,
+       "Security": data.factors.security,
+       "Performance": data.factors.performance
+    };
+    document.getElementById("factors").innerHTML = Object.entries(fMap).map(([k,v])=>`
+      <div class="factor"><div class="top"><span>${k}</span><b>${v}%</b></div><div class="bar"><span style="width:${v}%"></span></div></div>
+    `).join("");
+  }
+
+  // Render Risks
+  if(data.risks) {
+    let rows = '<tr><th>Area</th><th>Finding</th><th>Risk</th></tr>';
+    data.risks.forEach(r => {
+       const color = r.risk_level === 'High' ? 'background:#fee2e2;color:#b91c1c' : (r.risk_level === 'Medium' ? 'background:#fef3c7;color:#b45309' : 'background:#eff6ff;color:#1d4ed8');
+       rows += `<tr><td>${r.area}</td><td>${r.finding}</td><td><span class="pill" style="${color}">${r.risk_level}</span></td></tr>`;
+    });
+    document.getElementById("risks").innerHTML = rows;
+  }
+}
+</script>
+</body>
+</html>
